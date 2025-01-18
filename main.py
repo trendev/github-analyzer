@@ -225,7 +225,7 @@ class GithubAnalyzer:
             
             # Save report with progress bar
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            report_path = self.output_dir / f'github_analysis_{timestamp}.md'
+            report_path = self.output_dir / f'{self.org_name}_{timestamp}.md'
             
             with tqdm(total=1, desc="Saving report", ncols=100) as pbar:
                 report_path.write_text(report, encoding='utf-8')
