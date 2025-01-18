@@ -1,11 +1,15 @@
+import os
+import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Dict, Counter
-from github import Github, Repository, Auth, Organization
-import os
+from typing import Counter, List, Optional
+
 from dotenv import load_dotenv
-from collections import defaultdict
+from github import Auth, Github, Repository
+from tqdm import tqdm
+
 
 @dataclass
 class RepositoryAnalysis:
@@ -54,13 +58,16 @@ class GithubAnalyzer:
         self.output_dir = Path(os.getenv("OUTPUT_DIR", "reports"))
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    def analyze_repository(self, repo: Repository) -> RepositoryAnalysis:
+    def analyze_repository(self, repo: Repository, pbar: Optional[tqdm] = None) -> RepositoryAnalysis:
+        if pbar:
+            pbar.set_description(f"Analyzing {repo.name}")
+        
         try:
             contributors_count = sum(1 for _ in repo.get_contributors())
         except Exception:
             contributors_count = 0
 
-        return RepositoryAnalysis(
+        analysis = RepositoryAnalysis(
             name=repo.name,
             description=repo.description,
             language=repo.language,
@@ -80,6 +87,11 @@ class GithubAnalyzer:
             contributors_count=contributors_count,
             url=repo.html_url
         )
+
+        if pbar:
+            pbar.update(1)
+        
+        return analysis
 
     def calculate_org_stats(self, analyses: List[RepositoryAnalysis]) -> OrganizationStats:
         languages = Counter()
@@ -186,25 +198,65 @@ class GithubAnalyzer:
 
     def run_analysis(self) -> None:
         try:
+            print(f"📊 Starting analysis for organization: {self.org_name}")
+            
+            # Get organization and repos with progress bar
+            print("🔍 Fetching repositories...")
             org = self.github.get_organization(self.org_name)
             repos = list(org.get_repos())
+            total_repos = len(repos)
             
-            print(f"Analyzing {len(repos)} repositories...")
-            analyses = [self.analyze_repository(repo) for repo in repos]
+            print(f"Found {total_repos} repositories")
+            time.sleep(1)  # Small pause for better UX
+            
+            # Analyze repositories with progress bar
+            analyses = []
+            with tqdm(total=total_repos, desc="Analyzing repositories", 
+                     unit="repo", ncols=100) as pbar:
+                for repo in repos:
+                    analysis = self.analyze_repository(repo, pbar)
+                    analyses.append(analysis)
+            
+            print("📈 Calculating organization statistics...")
             stats = self.calculate_org_stats(analyses)
             
+            print("📝 Generating report...")
             report = self.generate_markdown_report(analyses, stats)
+            
+            # Save report with progress bar
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             report_path = self.output_dir / f'github_analysis_{timestamp}.md'
             
-            report_path.write_text(report, encoding='utf-8')
-            print(f"Analysis complete. Report saved to: {report_path}")
+            with tqdm(total=1, desc="Saving report", ncols=100) as pbar:
+                report_path.write_text(report, encoding='utf-8')
+                pbar.update(1)
+            
+            print(f"✅ Analysis complete! Report saved to: {report_path}")
+            
+            # Print some quick stats
+            print("\n📊 Quick Summary:")
+            print(f"- Total Repositories: {stats.total_repos}")
+            print(f"- Active Repositories: {stats.active_repos}")
+            print(f"- Total Contributors: {stats.contributors}")
+            if stats.languages:
+                print(f"- Most Used Language: {stats.languages.most_common(1)[0][0]}")
             
         except Exception as e:
-            print(f"Error during analysis: {str(e)}")
+            print(f"❌ Error during analysis: {str(e)}")
         finally:
             self.github.close()
 
+def main():
+    try:
+        print("🚀 GitHub Organization Analyzer")
+        analyzer = GithubAnalyzer()
+        analyzer.run_analysis()
+    except KeyboardInterrupt:
+        print("\n⚠️ Analysis interrupted by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Fatal error: {str(e)}")
+        sys.exit(1)
+
 if __name__ == "__main__":
-    analyzer = GithubAnalyzer()
-    analyzer.run_analysis()
+    main()
