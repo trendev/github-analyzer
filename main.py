@@ -129,7 +129,7 @@ class GithubAnalyzer:
         )
 
     def generate_markdown_report(self, analyses: List[RepositoryAnalysis], stats: OrganizationStats) -> str:
-        report = f"# {self.org_name} Repository Analysis Report\n\n"
+        report = f"# {self.org_name} / GitHub Repositories Insights Report\n\n"
         
         # Organization Overview
         report += "## Organization Overview\n"
