@@ -239,7 +239,7 @@ class GithubAnalyzer:
         report = f"# {self.org_name} / GitHub Repositories Insights Report\n\n"
 
         # Organization Overview
-        report += "## Organization Overview\n"
+        report += "## Organization Overview\n\n"
         report += f"- Total Repositories: {stats.total_repos}\n"
         report += f"- Active Repositories: {stats.active_repos}\n"
         report += f"- Archived Repositories: {stats.archived_repos}\n"
@@ -249,20 +249,20 @@ class GithubAnalyzer:
         report += f"- Total Forks: {stats.forks}\n\n"
 
         # Language Distribution
-        report += "## Language Distribution\n"
+        report += "## Language Distribution\n\n"
         for lang, count in stats.languages.most_common():
             percentage = (count / stats.total_repos) * 100
             report += f"- {lang}: {count} repos ({percentage:.1f}%)\n"
 
         # Popular Topics
         if stats.topics:
-            report += "\n## Popular Topics\n"
+            report += "\n## Popular Topics\n\n"
             for topic, count in stats.topics.most_common(10):
                 report += f"- {topic}: {count} repos\n"
 
         # License Distribution
         if stats.licenses:
-            report += "\n## License Distribution\n"
+            report += "\n## License Distribution\n\n"
             for lic, count in stats.licenses.most_common():
                 report += f"- {lic}: {count} repos\n"
 
@@ -272,12 +272,12 @@ class GithubAnalyzer:
             if analysis.archived:
                 continue
 
-            report += f"\n### [{analysis.name}]({analysis.url})\n"
+            report += f"\n### [{analysis.name}]({analysis.url})\n\n"
             report += f"**Description:** {analysis.description or 'N/A'}\n"
             report += f"**Language:** {analysis.language or 'N/A'}\n"
             if analysis.topics:
                 report += f"**Topics:** {', '.join(analysis.topics)}\n"
-            report += "**Statistics:**\n"
+            report += "**Statistics:**\n\n"
             report += f"- Stars: {analysis.stars}\n"
             report += f"- Forks: {analysis.forks}\n"
             report += f"- Contributors: {analysis.contributors_count}\n"
@@ -296,15 +296,15 @@ class GithubAnalyzer:
             for analysis in sorted(analyses, key=lambda x: x.updated_at, reverse=True):
                 if not analysis.archived:
                     continue
-                report += f"\n### [{analysis.name}]({analysis.url})\n"
+                report += f"\n### [{analysis.name}]({analysis.url})\n\n"
                 report += f"- Language: {analysis.language or 'N/A'}\n"
                 report += f"- Last Updated: {
                     analysis.updated_at.strftime('%Y-%m-%d')}\n"
                 if analysis.description:
                     report += f"- Description: {analysis.description}\n"
 
-        report += f"\n---\n*Report generated on: {
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+        report += f"\n---\n\n#### Report generated on: {
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         return report
 
     def run_analysis(self) -> None:
